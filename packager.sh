@@ -9,14 +9,15 @@ fi
 
 CHECK_FILE="/readonly_check"
 READ_ONLY=0
+PACKAGE_MANAGER=$(basename "$0")
 
 # On exit or interrupt, remove the check file
 trap 'rm -f "$CHECK_FILE"' EXIT INT
 
 list_command_locations() {
-  command_name=$(basename "$1")
-  locations=$(type -a "$command_name" | awk '{print $3}')
-  echo "$locations"
+    local LOCATIONS
+    LOCATIONS=$(type -a "$PACKAGE_MANAGER" | awk '{print $3}')
+    echo "$LOCATIONS"
 }
 
 check_read_only() {
@@ -32,13 +33,13 @@ check_read_only
 
 if [ "$READ_ONLY" == "1" ]; then
   # Echo script name is not supported on read-only filesystem
-  echo "Running $0 is not supported on read-only filesystem and should not be used"
+  echo "Running $PACKAGE_MANAGER is not supported on read-only filesystem and should not be used"
   exit 1
 fi
 
 # Call the second location of the command and pass through all arguments
 # The first location should be an alias of this script
 # The second location should be the actual package manager
-mapfile -t locations < <(list_command_locations "$0")
+mapfile -t LIST_LOCATIONS < <(list_command_locations)
 
-exec "${locations[1]}" "$@"
+exec "${LIST_LOCATIONS[1]}" "$@"
