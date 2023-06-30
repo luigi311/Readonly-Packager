@@ -1,18 +1,8 @@
 #!/usr/bin/env bash
 set -e
 
-# Check if the script is running with sudo
-if [ "$EUID" -ne 0 ]; then
-  echo "Please run this script with sudo or as root."
-  exit 1
-fi
-
-CHECK_FILE="/readonly_check"
 READ_ONLY=0
 PACKAGE_MANAGER=$(basename "$0")
-
-# On exit or interrupt, remove the check file
-trap 'rm -f "$CHECK_FILE"' EXIT INT
 
 list_command_locations() {
     local LOCATIONS
@@ -21,11 +11,14 @@ list_command_locations() {
 }
 
 check_read_only() {
-  if touch "$CHECK_FILE" &>/dev/null; then
-    rm -f "$CHECK_FILE" &>/dev/null
-  else
-    READ_ONLY=1
-  fi
+    # Touch / and check to see if it returns read only 
+    # if it is any other message or error such as permission denied then the system is writable
+    TOUCH_OUTPUT=$(touch / 2>&1 || true)
+    if [[ $TOUCH_OUTPUT == *"ead-only"* ]]; then
+        READ_ONLY=1
+    else
+        READ_ONLY=0
+    fi
 }
 
 # Check if the filesystem is read-only
